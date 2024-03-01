@@ -49,7 +49,9 @@ class AllowedMetrics:
                             'eternus_cs8000.eternus_cs8000_fc']],
         'linux_os': [['cpu', 'mem', 'fs', 'net'],
                      ['linux_os.linux_os_cpu', 'linux_os.linux_os_mem', 'linux_os.linux_os_fs', 'linux_os.linux_os_net']],
-        'fj_ism': [['temp'], ['ism_temp']]
+        'fj_ism': [['temp'], ['ism_temp']],
+        'server': [['power', 'temp'],
+                    ['server.server_power', 'server.server_temp']]
     }
 
     @classmethod
@@ -92,6 +94,9 @@ class Parameters(BaseModel):
     ism_password: Optional[str] = Field(None)
     ism_port: Optional[PositiveInt] = Field(None, ge=1, le=65535)
     ism_secure: Optional[bool] = Field(True)
+    passwd: StrictStr
+    url: Optional[StrictStr] = Field(None, max_length=100)
+
 class Metrics(BaseModel):
     name: StrictStr
 

@@ -17,6 +17,7 @@ VERSION=0.1
 import yaml
 import json, requests, logging
 import functions_core.yaml_validate
+import argparse
 from functions_core.grafana_fun import *
 
 
@@ -59,5 +60,28 @@ def build_dashboards_new(config):
         upload_to_grafana(my_dashboard_json, grafana_server, grafana_api_key)
 
 
-testes()
+#testes()
+
+
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Grafana Dashboard Configuration")
+    parser.add_argument("--server", default="http://localhost:3000", help="Grafana server URL")
+    parser.add_argument("--config-file", default="config/config.yaml", help="Path to custom configuration file")
+    parser.add_argument("--api-token", default="[from config file]", help="Grafana API token")
+    parser.add_argument("--dashboard-name", default="MyDashboard", help="Name of the Grafana dashboard")
+    return parser.parse_args()
+
+def main():
+
+    args = parse_args()
+    print(f"Grafana command line dashboard creator v{VERSION}")
+    print(f"Grafana Server: {args.server}")
+    print(f"Config File: {args.config_file}")
+    print(f"API Token: {args.api_token}")
+    print(f"Dashboard Name: {args.dashboard_name}")
+
+if __name__ == "__main__":
+    main()
 

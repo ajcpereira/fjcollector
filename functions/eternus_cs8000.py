@@ -1,4 +1,5 @@
 import os, logging, subprocess, time, re
+import pandas as pd
 from functions_core.send_influxdb import *
 from functions_core.secure_connect import *
 
@@ -82,7 +83,11 @@ def eternus_cs8000_fs_io(**args):
          response = stdout.stdout
 
     timestamp = int(time.time())
-    
+
+    if len(response) == 0:
+        logging.error(f"Output of iostat is empty {response}")
+        return -1
+
     # Close ssh session
     ssh.ssh_del()
     logging.debug("Finished core function ssh with args %s" % args)
@@ -595,8 +600,8 @@ def eternus_cs8000_fc(**args):
                     tx_mbytes = ssh.ssh_run(f"cat /sys/class/fc_host/{line}/statistics/fcp_output_megabytes")
                     rx_mbytes = ssh.ssh_run(f"cat /sys/class/fc_host/{line}/statistics/fcp_input_megabytes")
                     logging.debug(f"Controller is {line} and the tx output is {tx_mbytes.stdout} and the rx {rx_mbytes.stdout}")
-                    tx_mbytes = int(tx_bytes.stdout, 16)
-                    rx_mbytes = int(rx_bytes.stdout, 16)
+                    tx_mbytes = int(tx_mbytes.stdout, 16)
+                    rx_mbytes = int(rx_mbytes.stdout, 16)
                 except Exception as msgerror:
                     logging.error("Failed the cmd execution for mbytes calculation in %s with error %s" % (args['ip'], msgerror))
                     ssh.ssh_del()
@@ -607,8 +612,8 @@ def eternus_cs8000_fc(**args):
                     tx_mbytes = ssh.ssh_run(f"cat /sys/class/fc_host/{line}/statistics/tx_words")
                     rx_mbytes = ssh.ssh_run(f"cat /sys/class/fc_host/{line}/statistics/rx_words")
                     logging.debug(f"Controller is {line} and the tx output is {tx_mbytes.stdout} and the rx {rx_mbytes.stdout}")
-                    tx_mbytes = int(int(tx_bytes.stdout, 16)*4 / (1024*1024))
-                    rx_mbytes = int(int(rx_bytes.stdout, 16)*4 / (1024*1024))
+                    tx_mbytes = int(int(tx_mbytes.stdout, 16)*4 / (1024*1024))
+                    rx_mbytes = int(int(rx_mbytes.stdout, 16)*4 / (1024*1024))
                 except Exception as msgerror:
                     logging.error("Failed the cmd execution for mbytes calculation in %s with error %s" % (args['ip'], msgerror))
                     ssh.ssh_del()
@@ -664,3 +669,103 @@ def eternus_cs8000_fc(**args):
     else:
          logging.warning(f"There is no data to be sent to influxdb, are you in the correct system with the correct metrics?")
     logging.debug("Finished func_eternus_cs8000_fc")
+
+
+
+def eternus_cs8000_vtldirtycache(**args):
+
+    logging.debug("Starting func_eternus_cs8000_vtldirtycache")
+    
+    # Organize the args from ip calling specific function     
+    args=args_setup(args)
+
+    # Open ssh session
+    try:
+        ssh=Secure_Connect(str(args['ip']),args['bastion'],args['user'],args['host_keys'])
+    except Exception as msgerror:
+        logging.error(f"Failed to connect to {args['ip']} with error: {msgerror}")
+        ssh.ssh_del()
+        return -1
+    
+    logging.debug("This is my ssh session from the Class Secure_Connect %s" % ssh)
+    
+
+    ########## WILL EXECUTE MAIN SSH COMMANDS ###########################        
+    try:
+        cmd1="oci cstatus"
+        logging.debug(f"Command Line 1 - {cmd1}")
+        stdout = ssh.ssh_run(cmd1)
+        response = stdout.stdout
+        logging.debug(f"Output of Command Line 1:\n {response}")
+    except Exception as msgerror:
+        logging.error(f"Failed the cmd execution in {args['ip']} with error {msgerror}")
+        ssh.ssh_del()
+        return -1
+
+    timestamp = int(time.time())
+
+    # Assuming 'output' contains the output of the command "oci cstat"
+    #output = """
+    #/cache/100: (exclusive) retention: 31.32% violated: 11 Volume(s)
+    #used: 1.82% dirty: 69.56% retained: 0.04% clean: 22.50% free: 6.08%
+    #
+    #/cache/101: (exclusive) retention: 0.00%
+    #used: 0.18% dirty: 38.81% retained: 0.00% clean: 54.95% free: 6.06%
+    #
+    #Virtual Volumes: 96297
+    #
+    #Home: 96187 Volume(s)
+    #Restoring: 1 Volume(s)
+    #Mounted: 109 Volume(s)
+    #"""
+
+    # Split the output string by lines
+    lines = response.strip().split('\n')
+
+    # Create a DataFrame from the lines
+    df = pd.DataFrame({'Line': lines})
+
+    # Filter rows containing '/cache' in the Line column
+    cache_df = df[df['Line'].str.contains('/cache')].copy()
+
+    # Reset the index of cache_df
+    cache_df.reset_index(drop=True, inplace=True)
+
+    # Extract filesystem names
+    cache_df.loc[:, 'Filesystem'] = cache_df['Line'].str.split(':').str[0].str.strip()
+
+    # Filter lines containing "dirty" values
+    dirty_lines = df[df['Line'].str.contains('dirty')]['Line']
+
+    # Extract "dirty" values from the filtered lines
+    dirty_values = dirty_lines.str.extract(r'dirty:\s*([\d.]+)%').astype(float)
+
+    # Reset the index of dirty_values DataFrame
+    dirty_values.reset_index(drop=True, inplace=True)
+
+    # Assign "dirty" values to the Dirty column
+    cache_df.loc[:, 'Dirty'] = dirty_values
+
+    # Drop unnecessary columns
+    cache_df.drop(columns=['Line'], inplace=True)
+
+    #print(cache_df.to_string(header=False, index=False))
+    record = []
+    for index, row in cache_df.iterrows():
+        print(row['Filesystem'], row['Dirty'])
+        record = record + [
+            {"measurement": "fc",
+            "tags": {"system": args['name'], "resource_type": args['resources_types'], "host": args['hostname'],
+            "vtldirtycachefs": row['Filesystem']},
+            "fields": {"dirty%": float(row['Dirty'])},
+            "time": timestamp
+            }]
+        #Send
+    
+    # Send Data to InfluxDB
+    if record:
+        logging.debug("Data to be sent to DB by vtldirtycache:\n%s" % record)
+        send_influxdb(str(args['repository']), str(args['repository_port']), args['repository_api_key'], args['repo_org'], args['repo_bucket'], record)
+    else:
+         logging.warning(f"There is no data to be sent to influxdb, are you in the correct system with the correct metrics?")
+    logging.debug("Finished func_eternus_cs8000_vtldirtycache")

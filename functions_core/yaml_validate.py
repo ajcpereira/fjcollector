@@ -42,11 +42,11 @@ def configfile_read(configfile):
 ########## CLASS VALIDATES MIXING OF RESOURCE TYPES AND METRICS FROM YAML #######
 class AllowedMetrics:
     allowed_metrics = {
-        'eternus_cs8000': [['fs_io','fs', 'cpu', 'mem', 'drives', 'medias', 'pvgprofile', 'net', 'fc'],
+        'eternus_cs8000': [['fs_io','fs', 'cpu', 'mem', 'drives', 'medias', 'pvgprofile', 'net', 'fc', 'vtldirtycache'],
                            ['eternus_cs8000.eternus_cs8000_fs_io',
                             'linux_os.linux_os_fs','linux_os.linux_os_cpu', 'linux_os.linux_os_mem', 'eternus_cs8000.eternus_cs8000_drives', 
                             'eternus_cs8000.eternus_cs8000_medias', 'eternus_cs8000.eternus_cs8000_pvgprofile', 'linux_os.linux_os_net', 
-                            'eternus_cs8000.eternus_cs8000_fc']],
+                            'eternus_cs8000.eternus_cs8000_fc','eternus_cs8000_vtldirtycache']],
         'linux_os': [['cpu', 'mem', 'fs', 'net'],
                      ['linux_os.linux_os_cpu', 'linux_os.linux_os_mem', 'linux_os.linux_os_fs', 'linux_os.linux_os_net']],
         'fj_ism': [['temp'], ['ism_temp']]

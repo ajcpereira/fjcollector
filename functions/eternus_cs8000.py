@@ -692,7 +692,7 @@ def eternus_cs8000_vtldirtycache(**args):
 
     ########## WILL EXECUTE MAIN SSH COMMANDS ###########################        
     try:
-        cmd1="oci cstatus"
+        cmd1="vlmcmd cstat"
         logging.debug(f"Command Line 1 - {cmd1}")
         stdout = ssh.ssh_run(cmd1)
         response = stdout.stdout
@@ -704,7 +704,7 @@ def eternus_cs8000_vtldirtycache(**args):
 
     timestamp = int(time.time())
 
-    # Assuming 'output' contains the output of the command "oci cstat"
+    # Assuming 'output' contains the output of the command "vlmcmd cstat"
     #output = """
     #/cache/100: (exclusive) retention: 31.32% violated: 11 Volume(s)
     #used: 1.82% dirty: 69.56% retained: 0.04% clean: 22.50% free: 6.08%

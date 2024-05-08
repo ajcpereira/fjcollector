@@ -94,7 +94,7 @@ class Parameters(BaseModel):
     ism_password: Optional[str] = Field(None)
     ism_port: Optional[PositiveInt] = Field(None, ge=1, le=65535)
     ism_secure: Optional[bool] = Field(True)
-    passwd: StrictStr
+    passwd: Optional[StrictStr] = None
     url: Optional[StrictStr] = Field(None, max_length=100)
 
 class Metrics(BaseModel):

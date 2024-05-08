@@ -40,7 +40,7 @@ COLLECTOR_SPAN_NULLS = True # True
 COLLECTOR_FC_UNITS = 'MBs' # Data rate MBytes/sec = 'MBs'
 COLLECTOR_NET_UNITS = 'binBps' # Data rate/ Bytes/sec = 'Bps' or Data rate/ Bytes/sec(IEC)
 COLLECTOR_FS_UNITS = 'kbytes' # kibibytes
-
+COLLECTOR_MEM_UNITS = 'decmbytes'
 
 #################################################################################
 #                                                                               #
@@ -440,6 +440,8 @@ class CollectorTable(Panel):
     :param mappings: To assign colors to boolean or string values, use Value mappings
     :param overrides: To override the base characteristics of certain data
     :param showHeader: Show the table header
+    :param unit: units
+    :param sortBy: Sort rows by table fields
     """
 
     align = attr.ib(default='auto', validator=instance_of(str))
@@ -451,11 +453,15 @@ class CollectorTable(Panel):
     mappings = attr.ib(default=attr.Factory(list))
     overrides = attr.ib(default=attr.Factory(list))
     showHeader = attr.ib(default=True, validator=instance_of(bool))
-    span = attr.ib(default=6)
+    span = attr.ib(default=6),
+    unit = attr.ib(default='', validator=instance_of(str))
+    sortBy = attr.ib(default=attr.Factory(list), validator=attr.validators.deep_iterable(
+        member_validator=instance_of(TableSortByField),
+        iterable_validator=instance_of(list)
+    ))
 
     # added by MachadoN / BEGIN
     minWidth = attr.ib(default=150, validator=instance_of(int))
-    unit = attr.ib(default='', validator=instance_of(str))
     # added by MachadoN / END
 
     @classmethod
@@ -464,6 +470,7 @@ class CollectorTable(Panel):
         print("Error: Styled columns is not support in Grafana v8 Table")
         print("Please see https://grafana.com/docs/grafana/latest/visualizations/table/ for more options")
         raise NotImplementedError
+
 
     def to_json_data(self):
         return self.panel_json(
@@ -479,11 +486,11 @@ class CollectorTable(Panel):
                             'align': self.align,
                             'displayMode': self.displayMode,
                             'filterable': self.filterable,
+                            # added by MachadoN / BEGIN
                             'minWidth': self.minWidth
+                            # added by MachadoN / END
                         },
-                        # added by MachadoN / BEGIN
-                        'unit': self.unit,
-                        # added by MachadoN / END
+                        'unit': self.unit
                     },
                     'overrides': self.overrides
                 },
@@ -491,8 +498,88 @@ class CollectorTable(Panel):
                 'mappings': self.mappings,
                 'minSpan': self.minSpan,
                 'options': {
-                    'showHeader': self.showHeader
+                    'showHeader': self.showHeader,
+                    'sortBy': self.sortBy
                 },
                 'type': TABLE_TYPE,
+            }
+        )
+
+
+@attr.s
+class CollectorPieChartv2(Panel):
+    """Generates Pie Chart panel json structure
+    Grafana docs on Pie Chart: https://grafana.com/docs/grafana/latest/visualizations/pie-chart-panel/
+
+    :param custom: Custom overides
+    :param colorMode: Color mode
+        palette-classic (Default),
+    :param legendDisplayMode: Display mode of legend: list, table or hidden
+    :param legendPlacement: Location of the legend in the panel: bottom or right
+    :param legendValues: List of value to be shown in legend eg. ['value', 'percent']
+    :param mappings: To assign colors to boolean or string values, use Value mappings
+    :param overrides: Overrides
+    :param pieType: Pie chart type
+        pie (Default), donut
+    :param reduceOptionsCalcs: Reducer function / calculation
+    :param reduceOptionsFields: Fields that should be included in the panel
+    :param reduceOptionsValues: Calculate a single value per column or series or show each row
+    :param tooltipMode: Tooltip mode
+        single (Default), multi, none
+    :param unit: units
+    """
+
+    custom = attr.ib(factory=dict, validator=instance_of(dict))
+    colorMode = attr.ib(default='palette-classic', validator=instance_of(str))
+    legendDisplayMode = attr.ib(default='list', validator=instance_of(str))
+    legendPlacement = attr.ib(default='bottom', validator=instance_of(str))
+    legendValues = attr.ib(factory=list, validator=instance_of(list))
+    mappings = attr.ib(default=attr.Factory(list))
+    overrides = attr.ib(factory=list, validator=instance_of(list))
+    pieType = attr.ib(default='pie', validator=instance_of(str))
+    reduceOptionsCalcs = attr.ib(default=['lastNotNull'], validator=instance_of(list))
+    reduceOptionsFields = attr.ib(default='', validator=instance_of(str))
+    reduceOptionsValues = attr.ib(default=False, validator=instance_of(bool))
+    tooltipMode = attr.ib(default='single', validator=instance_of(str))
+    unit = attr.ib(default='', validator=instance_of(str))
+
+    # added by MachadoN / BEGIN
+    displayLabels = attr.ib(factory=list, validator=instance_of(list))
+    # added by MachadoN / END
+
+    def to_json_data(self):
+        return self.panel_json(
+            {
+                'fieldConfig': {
+                    'defaults': {
+                        'color': {
+                            'mode': self.colorMode
+                        },
+                        'custom': self.custom,
+                        'mappings': self.mappings,
+                        'unit': self.unit,
+                    },
+                    'overrides': self.overrides,
+                },
+                'options': {
+                    'reduceOptions': {
+                        'values': self.reduceOptionsValues,
+                        'calcs': self.reduceOptionsCalcs,
+                        'fields': self.reduceOptionsFields
+                    },
+                    'pieType': self.pieType,
+                    'tooltip': {
+                        'mode': self.tooltipMode
+                    },
+                    'legend': {
+                        'displayMode': self.legendDisplayMode,
+                        'placement': self.legendPlacement,
+                        'values': self.legendValues
+                    },
+                    # added by MachadoN / BEGIN
+                    'displayLabels': self.displayLabels,
+                    # added by MachadoN / END
+                },
+                'type': PIE_CHART_V2_TYPE,
             }
         )

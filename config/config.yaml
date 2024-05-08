@@ -1,30 +1,111 @@
 systems:
-  - name: dev_env_99
-    resources_types: eternus_cs8000
+#  - name: Bananas
+#    resources_types: eternus_cs8000
+#    config:
+#      parameters:
+#        user: super
+#        host_keys: keys/id_rsa
+#        poll: 1
+#      metrics:
+#        - name: cpu
+#        - name: mem
+#        - name: fs
+##        - name: fs_io
+##        - name: drives
+##        - name: pvgprofile
+##        - name: medias
+#        - name: net
+#        - name: fc
+#      ips:
+#        - ip: 127.0.0.1
+#          alias: linux14
+#        - ip: 127.0.0.1
+#          alias: linux15
+#  - name: Bananas
+#    resources_types: eternus_cs8000
+#    config:
+#      parameters:
+#        user: super
+#        host_keys: keys/id_rsa
+#        poll: 1
+#      metrics:
+#        - name: net
+#      ips:
+#        - ip: 127.0.0.1
+#          alias: linux24
+#  - name: Bananas
+#    resources_types: eternus_cs8000
+#    config:
+#      parameters:
+#        user: super
+#        host_keys: keys/id_rsa
+#        poll: 1
+#      metrics:
+#        - name: fs_io
+#        - name: fs
+#        - name: cpu
+#      ips:
+#        - ip: 127.0.0.1
+#          alias: linux28
+#  - name: Bananas
+#    resources_types: eternus_cs8000
+#    config:
+#      parameters:
+#        user: super
+#        host_keys: keys/id_rsa
+#        poll: 1
+#      metrics:
+#        - name: drives
+#        - name: fc
+#      ips:
+#        - ip: 127.0.0.1
+#          alias: linux44
+#  - name: Laranjas
+#    resources_types: eternus_cs8000
+#    config:
+#      parameters:
+#        user: super
+#        host_keys: keys/id_rsa
+#        poll: 1
+#      metrics:
+#        - name: fs_io
+#        - name: fs
+#        - name: cpu
+#      ips:
+#        - ip: 127.0.0.1
+#  - name: Morangos2
+#    resources_types: linux_os
+#    config:
+#      parameters:
+#        user: super
+#        host_keys: keys/id_rsa
+#        poll: 1
+#      metrics:
+#        - name: cpu
+#      ips:
+#        - ip: 127.0.0.1
+#          alias: host59
+  - name: Cerejas
+    resources_types: server
     config:
       parameters:
-        user: fjcollector
-        host_keys: keys/id_rsa
+        user: admin
+        passwd: Password123?
+        url: http://172.17.0.3:8000
         poll: 1
       metrics:
-        - name: fs_io
-        - name: fs
-        - name: cpu
-        - name: mem
-        - name: medias
-        - name: fc
+        - name: power
+        - name: temp
       ips:
-        - ip:  172.17.36.184
-          alias: linux14
-        - ip:  172.17.36.184
-          alias: linux02
+        - ip: 10.1.1.210
+          alias: irmc01
 global_parameters:
   repository: influxdb
   repository_port: 8086
   repository_protocol: tcp
-  repository_api_key: TOBEDEFINED
-  loglevel: ERROR
+  repository_api_key: k6E7fYZbBI7qBMyesIxA62CI8F1987Q0v0MK8f3uqu2WfExj3sWG_iRtCBcVaIjsXsTCkZV-hsl0AsHipfOvzw==
+  loglevel: DEBUG
   logfile: logs/fjcollector.log
   auto_fungraph: yes
-  grafana_api_key: TOBEDEFINED
-  grafana_server: grafana
+  grafana_api_key: glsa_9jHCovwgIzAnCjhDIVALiOjqtNbS6uhq_e2a2646e
+  grafana_server:  localhost
